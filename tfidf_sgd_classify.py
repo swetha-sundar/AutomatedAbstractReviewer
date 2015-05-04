@@ -141,6 +141,12 @@ def performGridSearch(pipeline, parameters, train_data, train_target, test_data,
 	print auc_val
 	return y_pred
 
+def writePredToFile(predicted_data, absids):
+	for i in absids:
+		op.write(i)
+		op.write("\t")
+		op.write(predicted_data[i])
+		op.write("\n")
 #main method
 
 #1. obtain the train and test split
@@ -153,12 +159,8 @@ print "Train and Test subsets created!!! \n"
 print "Preprocessing....\n"
 test_with_absids = np.delete(test,0,axis=1)
 test_absids_list = convertToList(test_with_absids)
-test_absids = test[:,1]
-print test_with_absids[0]
-print test_with_absids[1]
-print np.unique(test_with_absids).size
-print np.unique(test_absids).size
-
+test_absids=test[:,1]
+print test_absids.size
 #3. remove the abstract ids and the labels from the training & testing set (no special meaning to have it in the test set)
 data_train = np.delete(train,[0,1],axis=1)
 data_test = np.delete(test,[0,1],axis=1)
@@ -202,14 +204,14 @@ elif (cls.lower() == 'linearsvc'):
 #LINEAR SVC
 
 	pipeline = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
-		('clf',LinearSVC())])
+		('clf',LinearSVC(C=0.1))])
 	
 	parameters = {
 			'vect__max_df':(0.5,0.75,1.0),
 			'vect__max_features':(10000,20000,50000),
 			'vect__ngram_range':((1,1),(1,2)),
 			'tfidf__use_idf':(True,False),
-			'clf__C':(0.01, 0.1, 1),
+			#'clf__C':(0.01, 0.1, 1),
         	     }
 elif (cls.lower() == 'linearsvr'):
 #LINEAR SVR
@@ -269,19 +271,13 @@ else:
 	print "Options are: sgd/linearsvc/svc/nb/nearest_centroid"
 	sys.exit()
 
-#if (cls.lower() != 'nb'):
-#	y_pred = performGridSearch(pipeline, parameters, new_data_no_lab, y_train, new_data_test, y_test)
+if (cls.lower() != 'nb'):
+	y_pred = performGridSearch(pipeline, parameters, new_data_no_lab, y_train, new_data_test, y_test)
 
-print y_pred
+print convertToList(y_pred).size
 print "Writing predicted values to file...\n"
-#writePredToFile(predicted_data=y_pred, absids=test_absids)
+writePredToFile(predicted_data=convertToList(y_pred), absids=test_absids)
 print "Writing Complete!!!"
-def writePredToFile(predicted_data, absids):
-	for i in absids:
-		op.write(i)
-		op.write("\t")
-		op.write(predicted_data[i])
-		op.write("\n")
 
 '''
 indices = np.arange(len(results))
