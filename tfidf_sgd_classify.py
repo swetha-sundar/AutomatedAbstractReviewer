@@ -142,10 +142,10 @@ def performGridSearch(pipeline, parameters, train_data, train_target, test_data,
 	return y_pred
 
 def writePredToFile(predicted_data, absids):
-	for i in absids:
-		op.write(i)
+	for i in range(absids.size):
+		op.write(str(absids[i]))
 		op.write("\t")
-		op.write(predicted_data[i])
+		op.write(str(predicted_data[i]))
 		op.write("\n")
 #main method
 
@@ -203,14 +203,14 @@ if (cls.lower() == 'sgd'):
 elif (cls.lower() == 'linearsvc'):
 #LINEAR SVC
 
-	pipeline = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), 
+	pipeline = Pipeline([('vect', CountVectorizer(max_features=20000, ngram_range=(1,2))), ('tfidf', TfidfTransformer(use_idf=True)), 
 		('clf',LinearSVC(C=0.1))])
 	
 	parameters = {
 			'vect__max_df':(0.5,0.75,1.0),
-			'vect__max_features':(10000,20000,50000),
-			'vect__ngram_range':((1,1),(1,2)),
-			'tfidf__use_idf':(True,False),
+			#'vect__max_features':(10000,20000,50000),
+			#'vect__ngram_range':((1,1),(1,2)),
+			#'tfidf__use_idf':(True,False),
 			#'clf__C':(0.01, 0.1, 1),
         	     }
 elif (cls.lower() == 'linearsvr'):
@@ -274,9 +274,8 @@ else:
 if (cls.lower() != 'nb'):
 	y_pred = performGridSearch(pipeline, parameters, new_data_no_lab, y_train, new_data_test, y_test)
 
-print convertToList(y_pred).size
 print "Writing predicted values to file...\n"
-writePredToFile(predicted_data=convertToList(y_pred), absids=test_absids)
+writePredToFile(y_pred, test_absids)
 print "Writing Complete!!!"
 
 '''
