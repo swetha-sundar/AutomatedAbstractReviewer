@@ -4,7 +4,8 @@ from xml.etree.ElementTree import ElementTree
 import xml.etree.ElementTree as ET
 import sys
 
-
+TRAIN_PERCENT=0.7
+TEST_PERCENT=0.3
 TITLE = "title"
 KEYWORDS = "keywords"
 ABSTRACT = "abstract"
@@ -21,15 +22,17 @@ def writeToFile(records, op):
 				op.write("\t")
 		op.write("\n")
 
+#main method
+
 tofind_record = 'records/record'
 tofind_title = 'titles/title'
 tofind_keyword = 'keywords/keyword'
 tofind_abstractid = 'rec-number'
 tofind_abstract = 'abstract'
 
-
-filename = sys.argv[1]
-outputfile = sys.argv[2]
+#arguments
+filename = sys.argv[1] #xml file
+outputfile = sys.argv[2] #output file name
 
 op = open(outputfile,'w')
 
