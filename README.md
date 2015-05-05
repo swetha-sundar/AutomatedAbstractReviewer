@@ -1,8 +1,21 @@
 # AutomatedAbstractReviewer
 Automation of classification of Medical Abstracts 
-Written in python, Uses scikit-learn
+
+**Requirements**
+1. Python
+2. Scikit-learn
+
+**Best Work Environment**
+Install Canopy (for hassle free recursive installations of dependencies)
 
 **Steps to Run**:
+
+1. python preprocess.py input_xml_file output_file_name 
+2. sh run_train_test_split.sh preprocessed_output train_output_file test_output_file
+3. python generateDataWithLabels.py train/test_output_file Crowd_Workers_Label_fie(RawTurkResults.csv) ques_num(1,2,3,4) op_file
+4. sh run_under_sampling.sh question_num
+5. sh run_classification.sh question_num classifier_name op_file
+6. python post_preprocess.py classify_op_q1 classify_op_q2 classify_op_q3 classify_op_4 gold_label_file(relevant.txt)
 
 **Order of execution** is as follows:
 * preprocess.py
