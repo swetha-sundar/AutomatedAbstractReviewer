@@ -10,7 +10,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import NearestCentroid
 from sklearn.naive_bayes import GaussianNB
 from sklearn import metrics
-from sklearn import cross_validation
 
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import precision_score
@@ -21,43 +20,42 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plot
 
-TRAIN_PERCENT = 0.7
-TEST_PERCENT = 0.3
-
-if (len(sys.argv) != 6):
+if (len(sys.argv) != 7):
 	print "Invalid #parameters. \n 4 Arguments necessary \n\t corpus_name \n\t gold_labels \n\t question_num \n\t classifier_name Options are: sgd/linearsvc/svc/nb/nearest_centroid \n\t output file name\n"
 	sys.exit()
 
-corpus_name = sys.argv[1] #output of under_sampling or generateDataWithLabels.py
-gold_labels = sys.argv[2] #relevant.txt file
-label_num = sys.argv[3]  #the question number
-cls = sys.argv[4] #classifier option
-op_file = sys.argv[5] #output file name
+train_file = sys.argv[1] #output of under_sampling or generateDataWithLabels.py
+test_file = sys.argv[2] 
+gold_labels = sys.argv[3] #relevant.txt file
+label_num = sys.argv[4]  #the question number
+cls = sys.argv[5] #classifier option
+op_file = sys.argv[6] #output file name
+
 op = open(op_file, 'w')
 
 if (cls not in ['sgd', 'linearsvc', 'nb', 'nearest_centroid', 'svc']):
 	print "Wrong classifier option. Options are: sgd/linearsvc/svc/nb/nearest_centroid\n"
 	sys.exit()
 
-#performs the train and test split
-def fetch_corpus(subset):
-	data = np.array([]).reshape(0,)
-	with open(corpus_name) as f:
-		corpus = []
-		content = f.readlines()
-		
-		for line in content:
-			new_line = line.strip()
-			elements = new_line.split('\t')
-			corpus.append(elements)
-		data = np.array(corpus)
-		
-		train, test = cross_validation.train_test_split(data,
-			train_size=TRAIN_PERCENT, test_size=TEST_PERCENT)
-		if (subset == 'train'):
-			return train
-		else:
-			return test
+#import train/test data
+def fetch_corpus(file_name):
+	f = open(file_name, 'r')
+	content = f.readlines()
+	return content
+
+#remove Labels from data
+def extractElements(data):
+	labels = []
+	absids = []
+	data_absids = []
+	only_data = []
+	for line in data:
+		labels.append(int(line.split("\t")[0]))
+		absids.append(line.split("\t")[1])
+		data_absids.append(line.split("\t",1)[1])
+		only_data.append(line.split("\t",2)[2])
+	return labels, absids,data_absids,only_data
+
 
 #Comparison against the gold standard
 def checkRelevance(abs_id):
@@ -134,7 +132,7 @@ def performGridSearch(pipeline, parameters, train_data, train_target, test_data,
 	print "Predicting..."
 	y_pred = model.predict(test_data)
 	print(metrics.classification_report(test_target,y_pred))
-	fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred, pos_label=1)	
+	fpr, tpr, thresholds = metrics.roc_curve(test_target, y_pred, pos_label=1)	
 	print fpr
 	auc_val =  metrics.auc(fpr, tpr)
 	print "AUC:" 
@@ -142,7 +140,7 @@ def performGridSearch(pipeline, parameters, train_data, train_target, test_data,
 	return y_pred
 
 def writePredToFile(predicted_data, absids):
-	for i in range(absids.size):
+	for i in range(len(absids)):
 		op.write(str(absids[i]))
 		op.write("\t")
 		op.write(str(predicted_data[i]))
@@ -151,38 +149,23 @@ def writePredToFile(predicted_data, absids):
 
 #1. obtain the train and test split
 print "Splitting the data into train and test.....\n"
-train = fetch_corpus(subset='train')
-test = fetch_corpus(subset='test')
+train = fetch_corpus(train_file)
+test = fetch_corpus(test_file)
 print "Train and Test subsets created!!! \n"
 
 #2. remove the labels from the test set.
 print "Preprocessing....\n"
-test_with_absids = np.delete(test,0,axis=1)
-test_absids_list = convertToList(test_with_absids)
-test_absids=test[:,1]
-print test_absids.size
+
 #3. remove the abstract ids and the labels from the training & testing set (no special meaning to have it in the test set)
-data_train = np.delete(train,[0,1],axis=1)
-data_test = np.delete(test,[0,1],axis=1)
-
-#y_train, y_test = train[:,0], test[:,0]
-
 #4.get just the labels of the training data and convert them to integers (from string)
-y_train_arr = train[:,0]
-y_train = convertToNum(y_train_arr)
+
+train_labels,train_absids,train_data_absids,train_data = extractElements(train)
+test_labels,test_absids,test_data_absids,test_data = extractElements(test)
 
 #5. except for question 1, test labels for all other questions are crowd-source labels
 if (label_num == '1'):
-	y_test = getTestLabels(test_absids_list)
-else:
-	y_test_arr = test[:,0]
-	y_test = convertToNum(y_test_arr)
-
-#converting from numpy to list
-new_data_train = convertToList(train)
-new_data_test = convertToList(data_test)
-new_data_no_lab = convertToList(data_train)
-
+	test_labels = getTestLabels(test_data_absids)
+print len(test_labels)
 print "Preprocessing complete!!\n"
 
 #SGD CLASSIFIER
@@ -252,7 +235,7 @@ elif (cls.lower() == 'nb'):
 			'vect__ngram_range':((1,1),(1,2)),
 			'tfidf__use_idf':(True,False)
 		     }
-	y_pred = performGridSearch(pipeline, parameters, data_train, y_train, data_test, y_test)
+	y_pred = performGridSearch(pipeline, parameters, train_data, train_labels, test_data, test_labels)
  		
 elif (cls.lower() == 'nearest_centroid'):
 #Nearest Centroid
@@ -272,12 +255,11 @@ else:
 	sys.exit()
 
 if (cls.lower() != 'nb'):
-	y_pred = performGridSearch(pipeline, parameters, new_data_no_lab, y_train, new_data_test, y_test)
+	y_pred = performGridSearch(pipeline, parameters, train_data, train_labels, test_data, test_labels)
 
 print "Writing predicted values to file...\n"
 writePredToFile(y_pred, test_absids)
 print "Writing Complete!!!"
-
 '''
 indices = np.arange(len(results))
 results = [[x[i] for x in results] for i in range(2)]
