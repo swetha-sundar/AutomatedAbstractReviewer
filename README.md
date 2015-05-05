@@ -14,4 +14,4 @@ Order of execution is as follows:
 I have included the shell scripts to run the python scripts. 
 
 The data folder contains all the data (input and output) that is required for this project
-
+* preprocess_output: This folder contains the output of preprocess.py 
