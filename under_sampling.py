@@ -13,6 +13,9 @@ op = open(outputfile, 'w')
 
 range_st = 0 
 
+def calcRange(dataset):
+	return len(dataset)
+'''
 if label_no == 1:
 	range_end = 5018
 elif label_no == 2:
@@ -21,7 +24,7 @@ elif label_no == 3:
 	range_end = 190
 else:
 	range_end = 665
-
+'''
 def splitFile():
 	positive_set = []
 	negative_set = []
@@ -36,9 +39,9 @@ def splitFile():
 	print(len(negative_set))
 	return positive_set, negative_set
 
-def undersample(label_no,negative_set):
+def undersample(data, range_end):
 	dataset = []
-	dataset = sample(negative_set, range_end)
+	dataset = sample(data, range_end)
 	print (len(dataset))
 	return dataset
 
@@ -54,10 +57,12 @@ def writeOutputToFile(dataset):
 sample_set = []
 positive_set, negative_set = splitFile()
 if label_no == 1:
-	sample_set= undersample(label_no, negative_set)
+	range_end = calcRange(positive_set)
+	sample_set= undersample(negative_set, range_end)
 	sample_set = sample_set + positive_set
 else:
-	sample_set= undersample(label_no, positive_set)
+	range_end = calcRange(negative_set)
+	sample_set= undersample(positive_set, range_end)
 	sample_set = sample_set + negative_set
 
 shuffle(sample_set)
